@@ -1,5 +1,6 @@
 import pygame
 from sys import exit
+from random import randint
 
 
 def display_score():
@@ -9,8 +10,19 @@ def display_score():
     screen.blit(score_surface, score_rect)
     return game_time
 
-pygame.init()
 
+def obstacle_movement(obstacle_list):
+    if obstacle_list:
+        for obstacle_rect in obstacle_list:
+            obstacle_rect.x -= 5
+            screen.blit(blob_surface, obstacle_rect)
+        obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
+        return obstacle_list
+    else:
+        return []
+
+
+pygame.init()
 screen = pygame.display.set_mode((800, 400))
 pygame.display.set_caption('Sprinter')
 clock = pygame.time.Clock()
@@ -25,13 +37,17 @@ sky_surface = pygame.image.load('graphics/sky.png').convert()
 ground_surface = pygame.image.load('graphics/ground.png').convert()
 ground_rect = ground_surface.get_rect(midbottom=(800, 100))
 
+#enemies / obstacles
 blob_surface = pygame.image.load('graphics/blob1.png').convert_alpha()
 blob_surface = pygame.transform.scale(blob_surface, (70, 30))
-blob_rect = blob_surface.get_rect(midbottom=(800, 300))
 
+obstacle_rect_list = []
+
+#PLAYER
 player_surface = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
 player_surface = pygame.transform.scale(player_surface, (60, 80))
 player_rect = player_surface.get_rect(midbottom=(80, 300))
+
 
 # INTRO SCREEN
 player_stand = pygame.image.load('graphics/player_stand.png').convert_alpha()
@@ -48,7 +64,7 @@ player_gravity = 0
 
 #TIMERS
 obstacle_timer = pygame.USEREVENT + 1
-
+pygame.time.set_timer(obstacle_timer, 1500)
 
 # Main game loop
 
@@ -68,23 +84,16 @@ while True:
                     player_gravity = -20
         else:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                blob_rect.left = 800
                 start_time = pygame.time.get_ticks()
                 game_active = 1
 
+        if event.type == obstacle_timer and game_active:
+            obstacle_rect_list.append(blob_surface.get_rect(bottomright=(randint(900, 1100), 300)))
 
     if game_active:
         screen.blit(sky_surface, (0, 0))  # draw the background
         screen.blit(ground_surface, (0, 300))  # draw the floor
-
         score = display_score()  # Score takes the function value
-
-
-        # blob
-        blob_rect.left -= 5
-        screen.blit(blob_surface, blob_rect)
-        if blob_rect.right <= 0:
-            blob_rect.left = 800
 
         # player
         player_gravity += 1
@@ -92,6 +101,9 @@ while True:
         if player_rect.bottom >= 300:
             player_rect.bottom = 300
         screen.blit(player_surface, player_rect)  # draw the player
+
+        # enemies movement
+        obstacle_rect_list = obstacle_movement(obstacle_rect_list)
 
         # Collisions
         if blob_rect.colliderect(player_rect):
