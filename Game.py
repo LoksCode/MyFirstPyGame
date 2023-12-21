@@ -21,10 +21,14 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (60, 80))
         self.rect = self.image.get_rect(midbottom=(80, 300))
 
+        self.jump_sound = pygame.mixer.Sound('sounds/jump.mp3')
+        self.jump_sound.set_volume(0.3)
+
     def player_input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and self.rect.bottom >= 300:
             self.gravity = -20
+            self.jump_sound.play()
 
     def apply_gravity(self):
         self.gravity += 1
@@ -100,6 +104,9 @@ def display_score():
 
 def collision_sprite():
     if pygame.sprite.spritecollide(player.sprite, obstacle_group, False):
+        game_over_music.play(loops=-1)
+        game_music.stop()
+        hit_sound.play()
         obstacle_group.empty()
         return False
     else:
@@ -115,11 +122,22 @@ start_time = 0
 score = 0
 player_gravity = 0
 
+#audio zone
+
+game_music = pygame.mixer.Sound('sounds/gameost.wav')
+game_music.set_volume(0.05)
+menu_music = pygame.mixer.Sound('sounds/titleost.wav')
+menu_music.play(loops=-1)
+menu_music.set_volume(0.04)
+game_over_music = pygame.mixer.Sound('sounds/pointsost.wav')
+game_over_music.set_volume(0.05)
+hit_sound = pygame.mixer.Sound('sounds/oor.mp3')
+
+
 #groups
 player = pygame.sprite.GroupSingle(Player())
 player.add(Player())
 obstacle_group = pygame.sprite.Group()
-# obstacle_group.add(Obstacle())
 
 # importing and converting graphics
 pixel_font = pygame.font.Font('font/Pixeltype.ttf', 50)
@@ -155,18 +173,18 @@ while True:
         else:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 start_time = pygame.time.get_ticks()
+                menu_music.stop()
+                game_over_music.stop()
+                game_music.play(loops=-1)
                 game_active = 1
 
     if game_active:
-
         screen.blit(sky_surface, (0, 0))  # draw the background
         screen.blit(ground_surface, (0, 300))  # draw the floor
-
         score = display_score()  # Score takes the function value
         player.draw(screen)  #Player class is drawn
         obstacle_group.draw(screen)  #enemies class is drawn
         obstacle_group.update()  #enemies class is updated
-
         #collision function
         game_active = collision_sprite()
 
